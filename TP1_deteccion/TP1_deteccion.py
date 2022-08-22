@@ -8,7 +8,7 @@ webcam = cv.VideoCapture(0)
 
 
 def denoise(frame, method, radius):
-    kernel = cv.getStructuringElement(method, (radius, radius))
+    kernel = cv.getStructuringElement(method, (radius+1, radius+1))
     opening = cv.morphologyEx(frame, cv.MORPH_OPEN, kernel)
     closing = cv.morphologyEx(opening, cv.MORPH_CLOSE, kernel)
     return closing
@@ -27,7 +27,7 @@ def contours(binary, img):
 
 def to_binary(img, value):
     gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
-    binary = cv.threshold(gray, value, 255, cv.THRESH_BINARY_INV)
+    ret, binary = cv.threshold(gray, value, 255, cv.THRESH_BINARY_INV)
     return binary
 
 def find_contours(img):
@@ -41,39 +41,47 @@ def get_contours(binary, img):
         if area > 0.5:
             peri = cv.arcLength(i, True)
             approx = cv.approxPolyDP(i, 0.02*peri, True)
-        return contours
+    return contours
 def getBiggerContour(contours):
     max_ctn = contours[0]
     for ctn in contours:
-        if cv.contournArea(ctn) > cv.contournArea(max_ctn):
+        if cv.contourArea(ctn) > cv.contourArea(max_ctn):
             max_ctn = ctn
             return max_ctn
-def library():
-    rectangle = cv.imread('C:/Users/agusv/OneDrive/Escritorio/Vision artificial/Proyecto 1/Rectangulo.jpeg')
-    circle = cv.imread('C:/Users/agusv/OneDrive/Escritorio/Vision artificial/Proyecto 1/Circulo.jpeg')
-    triangle = cv.imread('C:/Users/agusv/OneDrive/Escritorio/Vision artificial/Proyecto 1/Triangulo.png')
 
-    bw_rec = to_binary(rectangle)
-    bw_cir = to_binary(circle)
-    bw_tri = to_binary(triangle)
+def setBinaryAutom(image):
+    gray = cv.cvtColor(image, cv.COLOR_RGB2GRAY)
+    ret1, thresh1 = cv.threshold(gray, 0, 255,
+                                 cv.THRESH_BINARY_INV + cv.THRESH_OTSU)  # aplica funcion threadhole / ret1 si es true --> significa q no tenemos error
+    return thresh1
+def library():
+    rectangle = cv.imread('C:/Users/Sofia/Downloads/Rectangulo.jpeg')
+    circle = cv.imread('C:/Users/Sofia/Downloads/Circulo.jpeg')
+    triangle = cv.imread('C:/Users/Sofia/Downloads/Triangulo.png')
+
+    bw_rec = setBinaryAutom(rectangle)
+    bw_cir = setBinaryAutom(circle)
+    bw_tri = setBinaryAutom(triangle)
 
     con_rec = find_contours(bw_rec)
     con_cir = find_contours(bw_cir)
     con_tri = find_contours(bw_tri)
 
     figures = {
-        getBiggerContour(con_rec), getBiggerContour(con_cir), getBiggerContour(con_tri)
+        "circulo": getBiggerContour(con_cir),
+        "rectangulo": getBiggerContour(con_rec),
+        "triangulo": getBiggerContour(con_tri)
     }
     return figures
 
 
 def main():
-    cv.nameWindow('Binary')
-    cv.crateTrackbar('Bi_tb', 'Binary', 0, 255, to_binary)
-    cv.nameWindow('Denoise')
-    cv.crateTrackbar('Denoise_tb', 'Denoise', 0, 5, denoise)
-    cv.nameWindow('Webcam')
-    cv.crateTrackbar('Error', 'Webcam', 0, 50, denoise)
+    cv.namedWindow('Binary')
+    cv.createTrackbar('Bi_tb', 'Binary', 0, 255, to_binary)
+    cv.namedWindow('Denoise')
+    cv.createTrackbar('Denoise_tb', 'Denoise', 0, 5, denoise)
+    cv.namedWindow('Webcam')
+    cv.createTrackbar('Error', 'Webcam', 0, 50, denoise)
 
     while True:
         tecla = cv.waitKey(30)
@@ -81,7 +89,7 @@ def main():
 
         value_b = cv.getTrackbarPos('Bi_tb', 'Binary')
         im_bw = to_binary(imWebcam, value_b)
-        cv.imshow('Binario', im_bw)
+        cv.imshow('Binary', im_bw)
 
         # Sacamos el ruido con metodo Denoise
         value_d = cv.getTrackbarPos('Denoise_tb', 'Denoise')
@@ -93,7 +101,7 @@ def main():
 
         # comparo contornos
         contours1 = get_contours(denoise_im_bw, imWebcam)
-        valError = cv.getTrackbarPos("Error", 'Webcam')
+        valError = cv.getTrackbarPos('Error', 'Webcam')
         for i in contours1:
             ref_contours = library()
             for j in ref_contours.keys():
@@ -114,3 +122,5 @@ def main():
 
 
 cv.destroyAllWindows()
+
+main()
