@@ -1,3 +1,4 @@
+from PIL import Image
 import cv2 as cv
 import numpy as np
 
@@ -55,17 +56,13 @@ def setBinaryAutom(image):
                                  cv.THRESH_BINARY_INV + cv.THRESH_OTSU)  # aplica funcion threadhole / ret1 si es true --> significa q no tenemos error
     return thresh1
 def library():
-    rectangle = cv.imread('C:/Users/Sofia/Downloads/Rectangulo.jpeg')
-    circle = cv.imread('C:/Users/Sofia/Downloads/Circulo.jpeg')
-    triangle = cv.imread('C:/Users/Sofia/Downloads/Triangulo.png')
+    circulo = setBinaryAutom(np.array(Image.open('Circulo.jpeg')))
+    triangulo = setBinaryAutom(np.array(Image.open('Triangulo.png')))
+    rectangulo = setBinaryAutom(np.array(Image.open('Rectangulo.jpeg')))
 
-    bw_rec = setBinaryAutom(rectangle)
-    bw_cir = setBinaryAutom(circle)
-    bw_tri = setBinaryAutom(triangle)
-
-    con_rec = find_contours(bw_rec)
-    con_cir = find_contours(bw_cir)
-    con_tri = find_contours(bw_tri)
+    con_rec = find_contours(circulo)
+    con_cir = find_contours(triangulo)
+    con_tri = find_contours(rectangulo)
 
     figures = {
         "circulo": getBiggerContour(con_cir),
@@ -73,6 +70,13 @@ def library():
         "triangulo": getBiggerContour(con_tri)
     }
     return figures
+def match(contour, val):
+    contours = library()
+    for i in contours.keys():
+        distance = cv.matchShapes(contour, contours[i], cv.CONTOURS_MATCH_I2, 0)
+        if distance < val:  # el error ponerlo con la barra al tope.
+            return i
+    return "False"
 
 
 def main():
@@ -103,17 +107,15 @@ def main():
         contours1 = get_contours(denoise_im_bw, imWebcam)
         valError = cv.getTrackbarPos('Error', 'Webcam')
         for i in contours1:
-            ref_contours = library()
-            for j in ref_contours.keys():
-                error = cv.matchShapes(i, ref_contours[j], cv.CONTOURS_MATCH_I2, 0)
-                if cv.contourArea(i) > 1000:
-                    if error < valError/1000:
-                        x, y, w, h = cv.boundingRect(i)
-                        cv.rectangle(imWebcam, (x, y), (x + w, y + h), (0, 255, 0), 10)
-                        cv.putText(imWebcam, j, (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
-                    else:
-                        x, y, w, h = cv.boundingRect(i)
-                        cv.rectangle(imWebcam, (x, y), (x + w, y + h), (0, 0, 255), 1)
+            if cv.contourArea(i) > 1000:
+                result = match(i, 0.01 + valError / 100)
+                if result != "False":
+                    x, y, w, h = cv.boundingRect(i)
+                    cv.rectangle(imWebcam, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                    cv.putText(imWebcam, str(result), (x, y), cv.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+                else:
+                    x, y, w, h = cv.boundingRect(i)
+                    cv.rectangle(imWebcam, (x, y), (x + w, y + h), (0, 0, 255), 2)
         cv.imshow('Webcam', imWebcam)
         # ESC == 27 en ASCII
 
