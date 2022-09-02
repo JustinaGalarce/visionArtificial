@@ -36,13 +36,8 @@ def find_contours(img):
     return contours
 
 def get_contours(binary, img):
-    contours, hierarchy = cv.findContours(binary, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
-    for i in contours:
-        area = cv.contourArea(i)
-        if area > 0.5:
-            peri = cv.arcLength(i, True)
-            approx = cv.approxPolyDP(i, 0.02*peri, True)
-    return contours
+    return contours(binary, img)
+
 def getBiggerContour(contours):
     max_ctn = contours[0]
     for ctn in contours:
