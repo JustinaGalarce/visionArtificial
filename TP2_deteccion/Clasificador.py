@@ -1,0 +1,3 @@
+
+
+clasificadorRecuperado = load('filename.joblib')
