@@ -1,11 +1,26 @@
-import numpy as np
 import cv2 as cv
+import numpy as np
+from matplotlib import pyplot as pl
+from skimage import color
 
-img = cv.imread('C:/Users/agusv/PycharmProjects/visionArtificial/TP3_/levadura.png')
-gray = cv.cvtColor(img, cv.COLOR_BGR2GRAY)
+print("Pulse ESC para terminar.")
+yeast = cv.imread('levadura.png') # yeast = levadura
+
+gray = cv.cvtColor(yeast, cv.COLOR_BGR2GRAY)
+ret, binary = cv.threshold(gray, 100, 255, cv.THRESH_BINARY)
+cv.imshow("original_im", yeast)
+cv.waitKey()
+contours, hierarchy = cv.findContours(binary, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
+cv.imshow("binary", binary)
+cv.waitKey()
+#contador de contornos
+num = len(contours)
+print(num) # falta que ande esto (no me cuenta los nucleos)
+#watershed
+
 _, thresh = cv.threshold(gray, 0, 255, cv.THRESH_BINARY_INV+cv.THRESH_OTSU)
 
-cv.imshow("img", thresh)
+cv.imshow("yeast", thresh)
 
 cv.waitKey()
 # noise removal
@@ -42,13 +57,18 @@ markers = markers+1
 # Now, mark the region of unknown with zero
 markers[unknown == 255] = 0
 
-markers = cv.watershed(img, markers)
+markers = cv.watershed(yeast, markers)
+yeast[markers == -1] = [0,0,0]
+im2 = color.label2rgb(markers, bg_label=1)
 
-print(img)
+print(yeast)
 print(markers)
 
-img[markers == -1] = [255, 0, 0]
-
-cv.imshow("img", img)
+yeast[markers == -1] = [255, 0, 0]
+cv.imshow("im2", im2)
+cv.imshow("img", yeast)
 
 cv.waitKey()
+
+
+
